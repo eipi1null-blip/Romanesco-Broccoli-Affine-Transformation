@@ -1,0 +1,657 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Romanesco Broccoli From Affine Transformations</title>
+  <style>
+    :root {
+      --ink: #26312b;
+      --muted: #68746d;
+      --grid: #dce6dd;
+      --grid2: #eef4ee;
+      --panel: #eef5ef;
+      --green: #3a8f50;
+      --green2: #8bcf79;
+      --dark: #1f5d35;
+      --accent: #c04f7c;
+      --blue: #244b98;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background: #f8faf8;
+      color: var(--ink);
+      font-family: "Segoe UI", Arial, sans-serif;
+      display: grid;
+      place-items: center;
+      padding: 14px;
+    }
+    .applet {
+      width: min(1280px, 100%);
+      min-height: 760px;
+      border: 2px solid #8c918c;
+      background: #fff;
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 340px;
+      gap: 14px;
+      padding: 14px;
+      box-shadow: 0 14px 34px rgba(38, 49, 43, .14);
+    }
+    .canvas-wrap {
+      position: relative;
+      min-height: 720px;
+      border-right: 1px solid rgba(104, 116, 109, .2);
+    }
+    canvas {
+      display: block;
+      width: 100%;
+      height: 720px;
+      touch-action: none;
+      background: #fff;
+    }
+    .hud {
+      position: absolute;
+      left: 14px;
+      top: 12px;
+      padding: 10px 12px;
+      border: 1px solid rgba(104, 116, 109, .25);
+      border-radius: 8px;
+      background: rgba(255, 255, 255, .9);
+      color: var(--ink);
+      font: 700 15px "Segoe UI", Arial, sans-serif;
+      max-width: min(460px, calc(100% - 28px));
+      pointer-events: none;
+    }
+    .side {
+      display: grid;
+      gap: 12px;
+      align-content: start;
+    }
+    .card {
+      border: 1px solid rgba(104, 116, 109, .28);
+      border-radius: 8px;
+      background: var(--panel);
+      padding: 12px;
+    }
+    h1 {
+      margin: 0 0 6px;
+      font: 800 21px Georgia, serif;
+      color: var(--dark);
+      letter-spacing: 0;
+    }
+    p {
+      margin: 6px 0 0;
+      font-size: 14px;
+      line-height: 1.38;
+      color: #36423b;
+    }
+    .control {
+      display: grid;
+      grid-template-columns: 82px 1fr 58px;
+      align-items: center;
+      gap: 8px;
+      margin: 10px 0;
+      font: 750 14px "Segoe UI", Arial, sans-serif;
+      color: #39443e;
+    }
+    input[type="range"] {
+      width: 100%;
+      accent-color: var(--green);
+      touch-action: manipulation;
+    }
+    .value {
+      text-align: right;
+      font-variant-numeric: tabular-nums;
+      color: var(--dark);
+    }
+    .toggles {
+      display: grid;
+      gap: 8px;
+      margin-top: 8px;
+      font: 750 14px "Segoe UI", Arial, sans-serif;
+    }
+    .toggles label {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+    }
+    input[type="checkbox"] {
+      width: 20px;
+      height: 20px;
+      accent-color: #5b5bd6;
+    }
+    .matrix-title {
+      font: 800 18px Georgia, serif;
+      color: var(--blue);
+      margin-bottom: 8px;
+    }
+    .matrix-line {
+      font: 700 14px "Segoe UI", Arial, sans-serif;
+      color: #344039;
+      margin: 8px 0;
+    }
+    .matrix {
+      display: inline-grid;
+      grid-template-columns: auto auto;
+      gap: 2px 14px;
+      padding: 0 15px;
+      position: relative;
+      vertical-align: middle;
+      font: 800 19px Georgia, serif;
+      line-height: 1.15;
+    }
+    .matrix::before,
+    .matrix::after {
+      content: "";
+      position: absolute;
+      top: -5px;
+      bottom: -5px;
+      width: 10px;
+      border-top: 2px solid #4a554e;
+      border-bottom: 2px solid #4a554e;
+    }
+    .matrix::before { left: 0; border-left: 2px solid #4a554e; }
+    .matrix::after { right: 0; border-right: 2px solid #4a554e; }
+    .legend {
+      display: grid;
+      gap: 8px;
+      font: 700 14px "Segoe UI", Arial, sans-serif;
+      color: #3d4842;
+    }
+    .key {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .swatch {
+      width: 20px;
+      height: 12px;
+      border-radius: 3px;
+      border: 1px solid rgba(0,0,0,.18);
+    }
+    button {
+      width: 100%;
+      border: 0;
+      border-radius: 7px;
+      background: #3f664c;
+      color: #fff;
+      font: 800 15px "Segoe UI", Arial, sans-serif;
+      padding: 10px 12px;
+      cursor: pointer;
+      touch-action: manipulation;
+    }
+    button.secondary { background: #4c5560; }
+    .small {
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.32;
+    }
+    @media (max-width: 900px) {
+      .applet {
+        grid-template-columns: 1fr;
+      }
+      .canvas-wrap {
+        min-height: 560px;
+        border-right: 0;
+      }
+      canvas { height: 560px; }
+    }
+  </style>
+</head>
+<body>
+  <main class="applet" aria-label="Romanesco broccoli affine transformation applet">
+    <section class="canvas-wrap">
+      <canvas id="view" aria-label="Romanesco broccoli built from repeated affine transformations"></canvas>
+      <div class="hud" id="hud">Each bud is a scaled, rotated, translated copy of the parent bud.</div>
+    </section>
+
+    <aside class="side">
+      <section class="card">
+        <h1>Romanesco By Affine Maps</h1>
+        <p>Start with one bud. Each step applies a transformation of the form <b>x' = sR(theta)x + t</b>, creating smaller buds around the previous one.</p>
+      </section>
+
+      <section class="card" aria-label="Affine transformation controls">
+        <label class="control">Scale s
+          <input id="scaleSlider" type="range" min="0.42" max="0.78" step="0.01" value="0.62">
+          <span id="scaleValue" class="value">0.62</span>
+        </label>
+        <label class="control">Angle
+          <input id="angleSlider" type="range" min="40" max="170" step="0.5" value="137.5">
+          <span id="angleValue" class="value">137.5</span>
+        </label>
+        <label class="control">Buds
+          <input id="budsSlider" type="range" min="3" max="9" step="1" value="6">
+          <span id="budsValue" class="value">6</span>
+        </label>
+        <label class="control">Depth
+          <input id="depthSlider" type="range" min="0" max="10" step="1" value="0">
+          <span id="depthValue" class="value">0</span>
+        </label>
+        <label class="control">Spread
+          <input id="spreadSlider" type="range" min="0.45" max="1.15" step="0.01" value="0.78">
+          <span id="spreadValue" class="value">0.78</span>
+        </label>
+        <div class="toggles">
+          <label><input id="showArrows" type="checkbox" checked> show affine copies</label>
+          <label><input id="showSpiral" type="checkbox" checked> show phyllotaxis spiral</label>
+          <label><input id="showGrid" type="checkbox" checked> show coordinate grid</label>
+        </div>
+      </section>
+
+      <section class="card" aria-label="Live matrix readout">
+        <div class="matrix-title">Linear Part</div>
+        <div class="matrix-line">sR(theta) =
+          <span class="matrix">
+            <span id="m00">-0.46</span><span id="m01">-0.42</span>
+            <span id="m10">0.42</span><span id="m11">-0.46</span>
+          </span>
+        </div>
+        <div class="matrix-line">Copy rule: <b>x' = sR(theta)x + t<sub>i</sub></b></div>
+        <p class="small" id="ruleText">The translation t_i places each smaller bud around its parent along a rotating spiral.</p>
+      </section>
+
+      <section class="card legend">
+        <div class="key"><span class="swatch" style="background:#7ecf76"></span> new smaller affine copies</div>
+        <div class="key"><span class="swatch" style="background:#2f7d48"></span> parent bud outlines</div>
+        <div class="key"><span class="swatch" style="background:#c04f7c"></span> spiral placement path</div>
+        <button id="resetBtn" type="button">Reset parameters</button>
+        <button id="fitBtn" class="secondary" type="button">Fit view</button>
+      </section>
+    </aside>
+  </main>
+
+  <script>
+    const canvas = document.getElementById("view");
+    const ctx = canvas.getContext("2d");
+    const sliders = {
+      scale: document.getElementById("scaleSlider"),
+      angle: document.getElementById("angleSlider"),
+      buds: document.getElementById("budsSlider"),
+      depth: document.getElementById("depthSlider"),
+      spread: document.getElementById("spreadSlider")
+    };
+    const values = {
+      scale: document.getElementById("scaleValue"),
+      angle: document.getElementById("angleValue"),
+      buds: document.getElementById("budsValue"),
+      depth: document.getElementById("depthValue"),
+      spread: document.getElementById("spreadValue")
+    };
+    const showArrows = document.getElementById("showArrows");
+    const showSpiral = document.getElementById("showSpiral");
+    const showGrid = document.getElementById("showGrid");
+    const matrixEls = [document.getElementById("m00"), document.getElementById("m01"), document.getElementById("m10"), document.getElementById("m11")];
+    const ruleText = document.getElementById("ruleText");
+    const hud = document.getElementById("hud");
+    const resetBtn = document.getElementById("resetBtn");
+    const fitBtn = document.getElementById("fitBtn");
+
+    const defaults = { scale: 0.62, angle: 137.5, buds: 6, depth: 0, spread: 0.78 };
+    const state = {
+      scale: defaults.scale,
+      angle: defaults.angle,
+      buds: defaults.buds,
+      depth: defaults.depth,
+      spread: defaults.spread,
+      view: { xMin: -6, xMax: 6, yMin: -5.4, yMax: 5.4 },
+      dragging: false,
+      last: null
+    };
+    const activePointers = new Map();
+
+    function fmt(n, digits = 2) {
+      return Number(n).toFixed(digits).replace("-0.00", "0.00").replace(/\.00$/, "").replace(/(\.\d)0$/, "$1");
+    }
+    function resize() {
+      const rect = canvas.getBoundingClientRect();
+      const dpr = window.devicePixelRatio || 1;
+      canvas.width = Math.max(1, Math.round(rect.width * dpr));
+      canvas.height = Math.max(1, Math.round(rect.height * dpr));
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      draw();
+    }
+    function size() {
+      const dpr = window.devicePixelRatio || 1;
+      return { w: canvas.width / dpr, h: canvas.height / dpr };
+    }
+    function syncViewAspect() {
+      const { w, h } = size();
+      const v = state.view;
+      const xSpan = v.xMax - v.xMin;
+      const ySpan = v.yMax - v.yMin;
+      const target = w / h;
+      const current = xSpan / ySpan;
+      const cx = (v.xMin + v.xMax) / 2;
+      const cy = (v.yMin + v.yMax) / 2;
+      if (current > target) {
+        const newY = xSpan / target;
+        v.yMin = cy - newY / 2;
+        v.yMax = cy + newY / 2;
+      } else {
+        const newX = ySpan * target;
+        v.xMin = cx - newX / 2;
+        v.xMax = cx + newX / 2;
+      }
+    }
+    function toScreen(p) {
+      const { w, h } = size();
+      const v = state.view;
+      return {
+        x: (p.x - v.xMin) / (v.xMax - v.xMin) * w,
+        y: h - (p.y - v.yMin) / (v.yMax - v.yMin) * h
+      };
+    }
+    function toWorld(p) {
+      const { w, h } = size();
+      const v = state.view;
+      return {
+        x: v.xMin + p.x / w * (v.xMax - v.xMin),
+        y: v.yMin + (1 - p.y / h) * (v.yMax - v.yMin)
+      };
+    }
+    function setViewAround(cx, cy, factor) {
+      const v = state.view;
+      const xSpan = (v.xMax - v.xMin) * factor;
+      const ySpan = (v.yMax - v.yMin) * factor;
+      v.xMin = cx - xSpan / 2;
+      v.xMax = cx + xSpan / 2;
+      v.yMin = cy - ySpan / 2;
+      v.yMax = cy + ySpan / 2;
+      syncViewAspect();
+      draw();
+    }
+    function fitView() {
+      state.view = { xMin: -6, xMax: 6, yMin: -5.4, yMax: 5.4 };
+      syncViewAspect();
+      draw();
+    }
+    function niceStep(span, target) {
+      const rough = span / target;
+      const pow = Math.pow(10, Math.floor(Math.log10(rough)));
+      const m = rough / pow;
+      const nice = m <= 2 ? 2 : m <= 5 ? 5 : 10;
+      return nice * pow;
+    }
+    function drawGrid() {
+      const { w, h } = size();
+      ctx.clearRect(0, 0, w, h);
+      ctx.fillStyle = "#fff";
+      ctx.fillRect(0, 0, w, h);
+      if (!showGrid.checked) return;
+      const v = state.view;
+      const minor = niceStep(v.xMax - v.xMin, 28);
+      const major = minor * 2;
+      ctx.lineWidth = 1;
+      for (let x = Math.ceil(v.xMin / minor) * minor; x <= v.xMax; x += minor) {
+        const p = toScreen({ x, y: 0 });
+        ctx.strokeStyle = Math.abs(x % major) < 1e-8 ? "rgba(148,166,151,.36)" : "rgba(148,166,151,.16)";
+        ctx.beginPath();
+        ctx.moveTo(p.x, 0);
+        ctx.lineTo(p.x, h);
+        ctx.stroke();
+      }
+      for (let y = Math.ceil(v.yMin / minor) * minor; y <= v.yMax; y += minor) {
+        const p = toScreen({ x: 0, y });
+        ctx.strokeStyle = Math.abs(y % major) < 1e-8 ? "rgba(148,166,151,.36)" : "rgba(148,166,151,.16)";
+        ctx.beginPath();
+        ctx.moveTo(0, p.y);
+        ctx.lineTo(w, p.y);
+        ctx.stroke();
+      }
+      const ox = toScreen({ x: 0, y: 0 }).x;
+      const oy = toScreen({ x: 0, y: 0 }).y;
+      ctx.strokeStyle = "rgba(64,78,68,.55)";
+      ctx.lineWidth = 1.8;
+      ctx.beginPath();
+      ctx.moveTo(ox, 0);
+      ctx.lineTo(ox, h);
+      ctx.moveTo(0, oy);
+      ctx.lineTo(w, oy);
+      ctx.stroke();
+    }
+    function rotate(v, angle) {
+      const c = Math.cos(angle);
+      const s = Math.sin(angle);
+      return { x: c * v.x - s * v.y, y: s * v.x + c * v.y };
+    }
+    function budNodes() {
+      const MAX_NODES = 9000;
+      const nodes = [];
+      const theta = state.angle * Math.PI / 180;
+      const root = { x: 0, y: -1.25, r: 2.2, a: Math.PI / 2, level: 0, parent: null };
+      nodes.push(root);
+      let frontier = [root];
+      for (let level = 1; level <= state.depth; level++) {
+        const next = [];
+        const children = Math.min(state.buds, Math.max(3, state.buds - Math.floor(level / 2)));
+        frontier.forEach(parent => {
+          for (let i = 0; i < children; i++) {
+            if (nodes.length >= MAX_NODES) return;
+            const t = children === 1 ? 0 : i / (children - 1);
+            const local = -0.95 + 1.9 * t;
+            const childAngle = parent.a + local * 0.9 + theta * (i - (children - 1) / 2) * 0.18;
+            const childScale = state.scale * (0.92 - 0.035 * Math.abs(i - (children - 1) / 2));
+            const childR = parent.r * childScale;
+            if (childR < 0.045) continue;
+            const offsetLen = parent.r * state.spread * (0.58 + 0.12 * level);
+            const offset = rotate({ x: local * parent.r * 0.32, y: offsetLen }, parent.a - Math.PI / 2);
+            const child = {
+              x: parent.x + offset.x,
+              y: parent.y + offset.y,
+              r: childR,
+              a: childAngle,
+              level,
+              parent
+            };
+            nodes.push(child);
+            next.push(child);
+          }
+        });
+        if (next.length > 900) {
+          const skip = Math.ceil(next.length / 900);
+          frontier = next.filter((_, index) => index % skip === 0);
+        } else {
+          frontier = next;
+        }
+      }
+      return nodes;
+    }
+    function drawArrow(from, to, alpha) {
+      const a = toScreen(from);
+      const b = toScreen(to);
+      ctx.save();
+      ctx.strokeStyle = `rgba(192,79,124,${alpha})`;
+      ctx.fillStyle = `rgba(192,79,124,${alpha})`;
+      ctx.lineWidth = 1.1;
+      ctx.setLineDash([4, 5]);
+      ctx.beginPath();
+      ctx.moveTo(a.x, a.y);
+      ctx.lineTo(b.x, b.y);
+      ctx.stroke();
+      ctx.setLineDash([]);
+      const ang = Math.atan2(b.y - a.y, b.x - a.x);
+      ctx.beginPath();
+      ctx.moveTo(b.x, b.y);
+      ctx.lineTo(b.x - 9 * Math.cos(ang - 0.45), b.y - 9 * Math.sin(ang - 0.45));
+      ctx.lineTo(b.x - 9 * Math.cos(ang + 0.45), b.y - 9 * Math.sin(ang + 0.45));
+      ctx.closePath();
+      ctx.fill();
+      ctx.restore();
+    }
+    function drawBud(node, maxLevel) {
+      const center = toScreen({ x: node.x, y: node.y });
+      const tip = toScreen({ x: node.x + Math.cos(node.a) * node.r, y: node.y + Math.sin(node.a) * node.r });
+      const side1 = toScreen({ x: node.x + Math.cos(node.a + 2.45) * node.r * 0.42, y: node.y + Math.sin(node.a + 2.45) * node.r * 0.42 });
+      const side2 = toScreen({ x: node.x + Math.cos(node.a - 2.45) * node.r * 0.42, y: node.y + Math.sin(node.a - 2.45) * node.r * 0.42 });
+      const shade = node.level / Math.max(1, maxLevel);
+      const fill = `rgba(${120 - shade * 30}, ${205 - shade * 55}, ${104 - shade * 25}, ${0.74 - shade * 0.08})`;
+      ctx.save();
+      ctx.fillStyle = fill;
+      ctx.strokeStyle = node.level === 0 ? "#1f5d35" : `rgba(31,93,53,${0.58 + .25 * (1 - shade)})`;
+      ctx.lineWidth = node.level === 0 ? 2.6 : Math.max(0.8, 1.8 - node.level * 0.17);
+      ctx.beginPath();
+      ctx.moveTo(tip.x, tip.y);
+      ctx.quadraticCurveTo(center.x, center.y, side1.x, side1.y);
+      ctx.quadraticCurveTo(center.x - (side2.x - side1.x) * 0.08, center.y - (side2.y - side1.y) * 0.08, side2.x, side2.y);
+      ctx.quadraticCurveTo(center.x, center.y, tip.x, tip.y);
+      ctx.closePath();
+      ctx.fill();
+      ctx.stroke();
+      ctx.strokeStyle = `rgba(31,93,53,${0.28 + .24 * (1 - shade)})`;
+      ctx.lineWidth = 0.9;
+      for (let i = -2; i <= 2; i++) {
+        const base = toScreen({ x: node.x + Math.cos(node.a + i * 0.32) * node.r * 0.12, y: node.y + Math.sin(node.a + i * 0.32) * node.r * 0.12 });
+        const end = toScreen({ x: node.x + Math.cos(node.a + i * 0.11) * node.r * 0.78, y: node.y + Math.sin(node.a + i * 0.11) * node.r * 0.78 });
+        ctx.beginPath();
+        ctx.moveTo(base.x, base.y);
+        ctx.lineTo(end.x, end.y);
+        ctx.stroke();
+      }
+      ctx.restore();
+    }
+    function updateReadouts() {
+      values.scale.textContent = fmt(state.scale, 2);
+      values.angle.textContent = fmt(state.angle, 1) + "°";
+      values.buds.textContent = state.buds;
+      values.depth.textContent = state.depth;
+      values.spread.textContent = fmt(state.spread, 2);
+      const th = state.angle * Math.PI / 180;
+      const c = Math.cos(th);
+      const s = Math.sin(th);
+      const m = [state.scale * c, -state.scale * s, state.scale * s, state.scale * c];
+      m.forEach((v, i) => matrixEls[i].textContent = fmt(v, 2));
+      ruleText.textContent = `At each bud, copies are scaled by ${fmt(state.scale, 2)} and rotated by ${fmt(state.angle, 1)} degrees before being translated into the next spiral position.`;
+      hud.textContent = `Depth ${state.depth}: ${budNodes().length} visible buds produced by repeated affine transformations.`;
+    }
+    function drawSpiral(nodes) {
+      const ordered = nodes.filter(n => n.level > 0).sort((a, b) => a.level - b.level || a.r - b.r);
+      ctx.save();
+      ctx.strokeStyle = "rgba(192,79,124,.55)";
+      ctx.lineWidth = 1.4;
+      ctx.setLineDash([5, 6]);
+      ctx.beginPath();
+      ordered.forEach((n, i) => {
+        const p = toScreen(n);
+        if (i === 0) ctx.moveTo(p.x, p.y);
+        else ctx.lineTo(p.x, p.y);
+      });
+      ctx.stroke();
+      ctx.restore();
+    }
+    function draw() {
+      syncViewAspect();
+      drawGrid();
+      const nodes = budNodes();
+      if (showSpiral.checked) drawSpiral(nodes);
+      if (showArrows.checked) {
+        nodes.forEach(n => {
+          if (n.parent && n.level <= Math.min(3, state.depth)) {
+            drawArrow(n.parent, n, 0.55 - n.level * 0.08);
+          }
+        });
+      }
+      nodes.slice().sort((a, b) => a.r - b.r).forEach(n => drawBud(n, state.depth));
+      updateReadouts();
+    }
+    function readControls() {
+      state.scale = Number(sliders.scale.value);
+      state.angle = Number(sliders.angle.value);
+      state.buds = Number(sliders.buds.value);
+      state.depth = Number(sliders.depth.value);
+      state.spread = Number(sliders.spread.value);
+      draw();
+    }
+    Object.values(sliders).forEach(slider => slider.addEventListener("input", readControls));
+    [showArrows, showSpiral, showGrid].forEach(input => input.addEventListener("change", draw));
+    resetBtn.addEventListener("click", () => {
+      Object.entries(defaults).forEach(([key, value]) => {
+        sliders[key].value = String(value);
+        state[key] = value;
+      });
+      fitView();
+    });
+    fitBtn.addEventListener("click", fitView);
+    function pointerList() {
+      return Array.from(activePointers.values());
+    }
+    function midpoint(a, b) {
+      return { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 };
+    }
+    function distance(a, b) {
+      return Math.hypot(a.x - b.x, a.y - b.y);
+    }
+    function panByScreenDelta(dx, dy) {
+      const { w, h } = size();
+      const v = state.view;
+      const worldDx = -dx / w * (v.xMax - v.xMin);
+      const worldDy = dy / h * (v.yMax - v.yMin);
+      v.xMin += worldDx;
+      v.xMax += worldDx;
+      v.yMin += worldDy;
+      v.yMax += worldDy;
+    }
+    function zoomAtScreen(screenPoint, factor) {
+      const rect = canvas.getBoundingClientRect();
+      const before = toWorld({ x: screenPoint.x - rect.left, y: screenPoint.y - rect.top });
+      const v = state.view;
+      v.xMin = before.x + (v.xMin - before.x) * factor;
+      v.xMax = before.x + (v.xMax - before.x) * factor;
+      v.yMin = before.y + (v.yMin - before.y) * factor;
+      v.yMax = before.y + (v.yMax - before.y) * factor;
+      syncViewAspect();
+    }
+    canvas.addEventListener("pointerdown", e => {
+      canvas.setPointerCapture(e.pointerId);
+      activePointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
+      state.dragging = activePointers.size === 1;
+      state.last = { x: e.clientX, y: e.clientY };
+    });
+    canvas.addEventListener("pointermove", e => {
+      if (!activePointers.has(e.pointerId)) return;
+      if (activePointers.size >= 2) {
+        const before = pointerList().slice(0, 2);
+        const beforeCenter = midpoint(before[0], before[1]);
+        const beforeDistance = Math.max(12, distance(before[0], before[1]));
+        activePointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
+        const after = pointerList().slice(0, 2);
+        const afterCenter = midpoint(after[0], after[1]);
+        const afterDistance = Math.max(12, distance(after[0], after[1]));
+        const factor = beforeDistance / afterDistance;
+        zoomAtScreen(afterCenter, Math.max(0.7, Math.min(1.35, factor)));
+        panByScreenDelta(afterCenter.x - beforeCenter.x, afterCenter.y - beforeCenter.y);
+        state.dragging = false;
+        draw();
+        return;
+      }
+      activePointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
+      if (!state.dragging) return;
+      const dx = e.clientX - state.last.x;
+      const dy = e.clientY - state.last.y;
+      panByScreenDelta(dx, dy);
+      state.last = { x: e.clientX, y: e.clientY };
+      draw();
+    });
+    function endPointer(e) {
+      activePointers.delete(e.pointerId);
+      const remaining = pointerList();
+      state.dragging = remaining.length === 1;
+      state.last = remaining[0] || null;
+    }
+    canvas.addEventListener("pointerup", endPointer);
+    canvas.addEventListener("pointercancel", endPointer);
+    canvas.addEventListener("wheel", e => {
+      e.preventDefault();
+      const rect = canvas.getBoundingClientRect();
+      const factor = e.deltaY < 0 ? 0.88 : 1.14;
+      zoomAtScreen({ x: e.clientX, y: e.clientY }, factor);
+      draw();
+    }, { passive: false });
+
+    window.addEventListener("resize", resize);
+    resize();
+  </script>
+</body>
+</html>
